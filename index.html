@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IKS &amp; NEP 2020 | Research Simulation Engine</title>
+  <style>
+    :root {
+      --bg-base: #030712;
+      --panel-bg: rgba(13, 21, 41, 0.88);
+      --panel-border: rgba(56, 189, 248, 0.25);
+      --accent-saffron: #f97316;
+      --accent-cyan: #00f2fe;
+      --accent-teal: #0d9488;
+      --accent-gold: #fbbf24;
+      --accent-red: #f43f5e;
+      --accent-green: #10b981;
+      --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      background: var(--bg-base);
+      color: #f1f5f9;
+      font-family: var(--font-sans);
+      height: 100%;
+      min-height: 720px;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .bg-mesh {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(0, 242, 254, 0.06) 0%, transparent 60%),
+        linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 36px 36px, 36px 36px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 30;
+      height: 52px;
+      background: rgba(3, 7, 18, 0.95);
+      border-bottom: 1px solid var(--panel-border);
+      backdrop-filter: blur(16px);
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .telemetry-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: #94a3b8;
+    }
+
+    .live-badge {
+      background: rgba(0, 242, 254, 0.12);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .radar-blip {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 8px var(--accent-cyan);
+      animation: blip 1.4s infinite;
+    }
+
+    @keyframes blip {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+
+    .wp-download-btn {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: 1px solid #38bdf8;
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+      transition: all 0.2s;
+    }
+
+    .wp-download-btn:hover {
+      background: linear-gradient(135deg, #0369a1, #0284c7);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      overflow: hidden;
+    }
+
+    @media (max-width: 992px) {
+      main {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+    }
+
+    .dossier {
+      background: var(--panel-bg);
+      border-right: 1px solid var(--panel-border);
+      backdrop-filter: blur(20px);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 20;
+    }
+
+    .paper-tag {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 1.5px;
+      color: var(--accent-saffron);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .slide-heading {
+      font-size: 1.45rem;
+      font-weight: 800;
+      line-height: 1.22;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .slide-lead {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .paper-box {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    .paper-box h4 {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent-cyan);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: uppercase;
+    }
+
+    .paper-box p, .paper-box li {
+      font-size: 0.78rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    .paper-box ul, .paper-box ol {
+      padding-left: 18px;
+      margin-top: 4px;
+    }
+
+    .author-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid var(--accent-saffron);
+      color: var(--accent-saffron);
+      font-size: 0.68rem;
+      font-family: var(--font-mono);
+      margin-top: 4px;
+    }
+
+    .stage {
+      position: relative;
+      background: #02050e;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .canvas-wrapper {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    #simCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .stage-hud-top {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 25;
+    }
+
+    .hud-chip {
+      background: rgba(11, 19, 38, 0.88);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(12px);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: #e2e8f0;
+      pointer-events: auto;
+    }
+
+    .switcher-bar {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      right: 14px;
+      background: rgba(11, 19, 38, 0.92);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(20px);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 25;
+    }
+
+    .switcher-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--accent-cyan);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .switch-btn {
+      background: rgba(30, 41, 59, 0.75);
+      border: 1px solid #334155;
+      color: #94a3b8;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .switch-btn:hover {
+      background: rgba(51, 65, 85, 0.95);
+      color: #ffffff;
+      border-color: var(--accent-cyan);
+    }
+
+    .switch-btn.active {
+      background: rgba(0, 242, 254, 0.18);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      font-weight: 700;
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.35);
+    }
+
+    .data-inspector-overlay {
+      position: absolute;
+      top: 56px;
+      right: 16px;
+      width: 320px;
+      background: rgba(8, 14, 28, 0.92);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(16px);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: #cbd5e1;
+      z-index: 24;
+      pointer-events: auto;
+    }
+
+    .inspector-title {
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      font-weight: 700;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .copilot-panel {
+      background: rgba(2, 6, 23, 0.7);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-top: auto;
+    }
+
+    .copilot-header {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--accent-cyan);
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .copilot-text {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      line-height: 1.4;
+      min-height: 42px;
+    }
+
+    footer {
+      position: relative;
+      z-index: 30;
+      height: 46px;
+      background: rgba(3, 7, 18, 0.98);
+      border-top: 1px solid var(--panel-border);
+      backdrop-filter: blur(16px);
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .nav-btn:hover {
+      background: #334155;
+      border-color: var(--accent-cyan);
+    }
+
+    .progress-bar {
+      flex: 1;
+      max-width: 260px;
+      height: 4px;
+      background: #1e293b;
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 0 16px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-saffron), var(--accent-cyan));
+      width: 8.33%;
+      transition: width 0.3s;
+    }
+
+    .slider-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+    }
+
+    .slider-item label {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .slider-ctl {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: #1e293b;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .slider-ctl::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      cursor: pointer;
+      border: 1px solid #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-mesh"></div>
+
+  <header>
+    <div class="telemetry-item">
+      <div class="live-badge"><span class="radar-blip"></span>LIVE RESEARCH SIMULATOR</div>
+      <span>PAPER: IKS_NEP2020_FRAMEWORK</span>
+      <span style="color: var(--accent-gold);">NIEPA &bull; CU JAMMU</span>
+    </div>
+    <div class="telemetry-item">
+      <button class="wp-download-btn" onclick="downloadWordPressFile()">
+        &darr; DOWNLOAD WORDPRESS FILE (.HTML)
+      </button>
+      <button class="nav-btn" style="padding: 2px 8px; font-size: 0.68rem;" onclick="toggleAudio()">
+        AUDIO SPEECH: <span id="lblAudio">OFF</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="dossier">
+      <div>
+        <div class="paper-tag" id="slideBadge">STAGE 01 // RESEARCH IDENTIFICATION &amp; TITLE</div>
+        <h1 class="slide-heading" id="slideTitle">Integrating Indigenous Knowledge Systems</h1>
+        <p class="slide-lead" id="slideSubtitle">
+          A Policy-Aligned Framework under NEP 2020: Operationalising Cognitive Pluralism and Contextual Pedagogy
+        </p>
+
+        <div id="slideContent">
+        </div>
+      </div>
+
+      <div class="copilot-panel">
+        <div class="copilot-header">
+          <span>AI RESEARCH SYNTHESIS COPILOT</span>
+          <span style="color: #64748b;">CONNECTED TO PAPER TEXT</span>
+        </div>
+        <div class="copilot-text" id="aiVoiceTranscript">
+          Switch the interactive buttons on the bottom dock to observe how specific empirical data points alter the visual simulation model.
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-hud-top">
+        <div class="hud-chip">
+          DATA MODE: <strong id="hudDataMode" style="color: var(--accent-cyan);">ACTIVE_DATA_STREAM</strong>
+        </div>
+        <div class="hud-chip">
+          SCHOLARLY TRACE: <strong id="hudTrace" style="color: #4ade80;">UGC-IKS / NEP 2020 / UNESCO</strong>
+        </div>
+      </div>
+
+      <div class="data-inspector-overlay" id="inspectorBox">
+        <div class="inspector-title">
+          <span id="inspectHeading">METRIC BREAKDOWN</span>
+          <span id="inspectTag">P. 3-4</span>
+        </div>
+        <div id="inspectBody">
+          Click or switch the buttons below to inspect the empirical dataset and observe real-time simulated parameters.
+        </div>
+      </div>
+
+      <div class="canvas-wrapper">
+        <canvas id="simCanvas"></canvas>
+      </div>
+
+      <div class="switcher-bar">
+        <div class="switcher-header">
+          <span id="switcherLabel">DATA-SWITCHER DOCK // CLICK BUTTONS TO TOGGLE RESEARCH EVIDENCE</span>
+          <span id="switcherHint" style="color: #64748b;">AFFECTS 3D VECTOR STAGE IN REAL TIME</span>
+        </div>
+        <div class="btn-row" id="switcherButtons">
+        </div>
+        <div id="sliderRack" style="display: none; gap: 14px; margin-top: 4px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="telemetry-item">
+      <button class="nav-btn" onclick="prevSlide()">&larr; PREV</button>
+      <button class="nav-btn" onclick="nextSlide()">NEXT &rarr;</button>
+      <span style="font-family: var(--font-mono); font-size: 0.75rem;" id="lblSlideCounter">01 / 12</span>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="telemetry-item">
+      <span style="font-size: 0.7rem; color: #64748b;">KEYS: &larr; / &rarr; / SPACEBAR</span>
+      <button class="nav-btn" onclick="toggleFullscreen()">FULLSCREEN</button>
+    </div>
+  </footer>
+
+  <script>
+    const researchDeck = [
+      {
+        badge: "STAGE 01 // RESEARCH IDENTIFICATION & TITLE",
+        title: "Integrating Indigenous Knowledge Systems",
+        subtitle: "A Policy-Aligned Framework under NEP 2020",
+        trace: "NIEPA & Central University of Jammu",
+        content: `
+          <div class="paper-box">
+            <h4>Principal Investigators</h4>
+            <p><strong>Vishab Partap Singh Chambyal</strong><br>
+            MAAIE Scholar, National Institute of Educational Planning and Administration (NIEPA), Deemed to be University under the Ministry of Education, Government of India. 
+            <span class="author-badge">vishab@niepa.ac.in</span></p>
+            <p style="margin-top:8px;"><strong>Payal Sharma</strong><br>
+            M.Ed. Scholar, Department of Educational Studies, Central University of Jammu. 
+            <span class="author-badge">payal.ps12345@gmail.com</span></p>
+          </div>
+          <div class="paper-box">
+            <h4>Abstract &amp; Research Problem</h4>
+            <p>Standardized, predominantly Western knowledge frameworks have historically marginalized indigenous knowledge. NEP 2020 provides a policy foundation for recognizing Indian knowledge traditions, demanding a shift from treating IKS as supplementary cultural folklore towards acknowledging it as a legitimate, evolving knowledge system.</p>
+          </div>
+        `,
+        buttons: [
+          { id: "b1", label: "Core Abstract Thesis", dataTag: "Thesis" },
+          { id: "b2", label: "NIEPA & Ministry Mandate", dataTag: "Institutional" },
+          { id: "b3", label: "Keywords Matrix", dataTag: "Keywords" }
+        ],
+        inspectorData: {
+          "b1": {
+            title: "CENTRAL RESEARCH THESIS",
+            tag: "Sec. 1",
+            text: "Effective integration of IKS requires a transition from treating indigenous knowledge as decorative cultural content towards recognising it as a legitimate and evolving knowledge system operating in critical dialogue with contemporary disciplines."
+          },
+          "b2": {
+            title: "INSTITUTIONAL RIGOUR",
+            tag: "NIEPA/MoE",
+            text: "Conducted under the National Institute of Educational Planning and Administration (NIEPA), apex body for educational policy planning under the Ministry of Education, Govt. of India."
+          },
+          "b3": {
+            title: "INDEXED KEYWORDS",
+            tag: "Keywords",
+            text: "1. Indigenous Knowledge Systems (IKS)<br>2. Contemporary Education<br>3. NEP 2020<br>4. Policy-Aligned Framework<br>5. Epistemic Pluralism"
+          }
+        },
+        aiVoice: "Welcome. This research paper by Vishab Partap Singh Chambyal and Payal Sharma develops a policy-aligned framework to integrate Indigenous Knowledge Systems under NEP 2020."
+      },
+      {
+        badge: "STAGE 02 // LITERATURE REVIEW SYNTHESIS",
+        title: "Empirical & Systematic Review Evidence",
+        subtitle: "Synthesizing recent global and Indian scholarship on IKS integration",
+        trace: "Ogegbo (2024), Ijatuyi (2025), Rasmawan (2025)",
+        content: `
+          <div class="paper-box">
+            <h4>Review of Literature Highlights</h4>
+            <p>Recent scholarship positions IKS as dynamic and adaptive rather than static. Systematic reviews emphasize collaborative dialogue over epistemic hierarchy, identifying both measured educational gains and persistent implementation barriers.</p>
+          </div>
+          <div class="paper-box">
+            <h4>Corpus of Systematic Reviews Analyzed</h4>
+            <ul>
+              <li><strong>Ogegbo &amp; Ramnarain (2024):</strong> 25 empirical studies on pedagogical practices.</li>
+              <li><strong>Ijatuyi et al. (2025):</strong> Systematic review in <em>Environmental Science &amp; Policy</em> on scientific &amp; indigenous synthesis.</li>
+              <li><strong>Rasmawan et al. (2025):</strong> Strategies, models, and impacts in science education.</li>
+              <li><strong>2026 STEM Review:</strong> Positive contributions vs. structural barriers.</li>
+            </ul>
+          </div>
+        `,
+        buttons: [
+          { id: "ogegbo", label: "Ogegbo & Ramnarain (2024)", dataTag: "25 Studies" },
+          { id: "ijatuyi", label: "Ijatuyi et al. (2025)", dataTag: "Env. Sci." },
+          { id: "rasmawan", label: "Rasmawan et al. (2025)", dataTag: "Impacts" },
+          { id: "stem2026", label: "2026 STEM Systematic Review", dataTag: "Barriers vs Impacts" }
+        ],
+        inspectorData: {
+          "ogegbo": {
+            title: "OGEGBO & RAMNARAIN (2024)",
+            tag: "25 Studies Reviewed",
+            text: "<strong>4 Core Pedagogical Practices Identified:</strong><br>1. Argumentative discussions<br>2. Contextualised instructional materials<br>3. Engagement with Indigenous knowledge holders/elders<br>4. Experiential learning connecting classroom concepts with local environments."
+          },
+          "ijatuyi": {
+            title: "IJATUYI ET AL. (2025)",
+            tag: "Environmental Sci & Policy",
+            text: "Found complementary strengths between indigenous and scientific knowledge. However, integration is complicated by: epistemological asymmetries, unequal power relations, intellectual property concerns, and extractive research practices."
+          },
+          "rasmawan": {
+            title: "RASMAWAN ET AL. (2025)",
+            tag: "Science Education Models",
+            text: "<strong>Dominant Models:</strong> Project-based learning, field research, discussion and reflection.<br><strong>Reported Benefits:</strong> Significant gains in student engagement, conceptual understanding, critical thinking skills, and appreciation of culture and nature."
+          },
+          "stem2026": {
+            title: "2026 STEM SYSTEMATIC REVIEW",
+            tag: "STEM Barriers & Gains",
+            text: "<strong>Contributions:</strong> Scientific understanding, creative thinking, environmental awareness.<br><strong>Persistent Barriers:</strong> Epistemological conflicts, lack of formal guidelines, limited teacher preparedness, resource constraints, and difficulty in authentic community engagement."
+          }
+        },
+        aiVoice: "Slide 2 synthesizes the literature. Ogegbo's review of 25 studies and Rasmawan's 2025 findings establish that experiential learning and engagement with elders yield the highest conceptual gains."
+      },
+      {
+        badge: "STAGE 03 // RESEARCH DESIGN & METHODOLOGY",
+        title: "Objectives & Methodological Matrix",
+        subtitle: "Qualitative and analytical policy inquiry design (Section 5)",
+        trace: "Table 1: Research Methodology Components",
+        content: `
+          <div class="paper-box">
+            <h4>Four Central Research Objectives</h4>
+            <ol>
+              <li>Examine IKS as dynamic contextual community-based knowledge systems.</li>
+              <li>Analyse alignment of IKS with the educational vision of NEP 2020.</li>
+              <li>Identify pedagogical pathways for integrating IKS into contemporary education.</li>
+              <li>Develop a policy-aligned framework bridging IKS with contemporary disciplines under NEP 2020.</li>
+            </ol>
+          </div>
+        `,
+        buttons: [
+          { id: "m1", label: "Research Design & Scope", dataTag: "Qualitative" },
+          { id: "m2", label: "Policy Document Corpus", dataTag: "NEP/NCFSE/UGC" },
+          { id: "m3", label: "Analytical Approach", dataTag: "Thematic Coding" }
+        ],
+        inspectorData: {
+          "m1": {
+            title: "RESEARCH DESIGN",
+            tag: "Section 5 Table",
+            text: "<strong>Design:</strong> Qualitative and analytical research design.<br><strong>Conceptual Analysis:</strong> Examination of knowledge pluralism, culturally responsive education, and interdisciplinary epistemic translation."
+          },
+          "m2": {
+            title: "POLICY CORPUS ANALYZED",
+            tag: "Authentic Documents",
+            text: "1. National Education Policy (NEP) 2020.<br>2. National Curriculum Framework for School Education (NCFSE) 2023.<br>3. UGC Guidelines on Indian Knowledge Systems (2023).<br>4. UNESCO LINKS Reports (2023, 2026)."
+          },
+          "m3": {
+            title: "ANALYTICAL APPROACH",
+            tag: "Synthesis Method",
+            text: "Thematic and comparative analysis of IKS integration, policy synergy mapping, and inductive framework development synthesizing curriculum, pedagogy, teachers, learners, and communities."
+          }
+        },
+        aiVoice: "Our methodology employs qualitative document analysis of NEP 2020, NCFSE 2023, and UGC guidelines, synthesized through thematic and comparative coding."
+      },
+      {
+        badge: "STAGE 04 // FINDINGS: OBJECTIVE 1",
+        title: "IKS as a Living Knowledge System",
+        subtitle: "Deconstructing five core empirical dimensions of indigenous traditions",
+        trace: "Findings Correspondence to Objective 1",
+        content: `
+          <div class="paper-box">
+            <h4>Core Finding: IKS is Not a Static Relic</h4>
+            <p>Indigenous Knowledge is continuously generated through lived observation, experience, experimentation, and adaptation to local biomes. UNESCO and MoE's IKS Division confirm that IKS evolves dynamically rather than remaining frozen in history.</p>
+          </div>
+        `,
+        buttons: [
+          { id: "dim1", label: "1. Living System", dataTag: "Adaptive" },
+          { id: "dim2", label: "2. Local Contexts", dataTag: "Bioregional" },
+          { id: "dim3", label: "3. Community-Based", dataTag: "People's Knowledge" },
+          { id: "dim4", label: "4. Generational Transmission", dataTag: "Oral & Practical" },
+          { id: "dim5", label: "5. Contemporary Engagement", dataTag: "Modern Interface" }
+        ],
+        inspectorData: {
+          "dim1": {
+            title: "IKS IS A LIVING KNOWLEDGE SYSTEM",
+            tag: "UNESCO & MoE",
+            text: "Not a fixed body of ancient information. Continuously developed through observation, experience, experimentation and adaptation. MoE's IKS Division defines IKS as knowledge arising continuously through analysis and experimentation."
+          },
+          "dim2": {
+            title: "ROOTED IN LOCAL CONTEXTS",
+            tag: "Bioregional Roots",
+            text: "Develops in close interaction with a community's environment, culture, geography, livelihood and social conditions. Meaning and application are strongly influenced by the immediate ecological context (NEP 2020)."
+          },
+          "dim3": {
+            title: "COMMUNITY-BASED KNOWLEDGE",
+            tag: "World Bank Cited",
+            text: "Fundamentally people's knowledge, developed and maintained within communities through everyday collective interaction. World Bank emphasizes communities as contributors, not merely recipients of knowledge."
+          },
+          "dim4": {
+            title: "INTERGENERATIONAL TRANSMISSION",
+            tag: "Oral & Living",
+            text: "Survives through oral traditions, apprenticeships, practical learning, and direct cultural participation. UNESCO highlights community-led safeguarding; UGC notes systematic intergenerational emergence."
+          },
+          "dim5": {
+            title: "ENGAGING CONTEMPORARY KNOWLEDGE",
+            tag: "UGC-IKS Bridging",
+            text: "Evidence rejects isolating IKS. UGC explicitly recommends connecting IKS concepts with modern disciplines for contemporary problem-solving; bridging traditional with contemporary systems is the central goal."
+          }
+        },
+        aiVoice: "Objective 1 establishes five characteristics of IKS. As documented by UNESCO and the World Bank, IKS is community-based, living, and capable of constructive dialogue with modern science."
+      },
+      {
+        badge: "STAGE 05 // FINDINGS: OBJECTIVE 2",
+        title: "NEP 2020 Policy Alignment Matrix",
+        subtitle: "Cross-mapping IKS modalities with policy mandates and bottlenecks",
+        trace: "Table: Alignment of IKS with NEP 2020 Vision",
+        content: `
+          <div class="paper-box">
+            <h4>Systematic Alignment Table (Paper Section 6)</h4>
+            <p>While NEP 2020 offers strong conceptual synergy with IKS, operational integration is hindered by real-world institutional bottlenecks.</p>
+          </div>
+        `,
+        buttons: [
+          { id: "align1", label: "Contextual Learning", dataTag: "Synergy 1" },
+          { id: "align2", label: "Curriculum Integration", dataTag: "Bottleneck: Texts" },
+          { id: "align3", label: "Multidisciplinary Learning", dataTag: "Bottleneck: Models" },
+          { id: "align4", label: "Experiential Learning", dataTag: "High Alignment" },
+          { id: "align5", label: "Teacher Preparedness", dataTag: "Critical Deficit" }
+        ],
+        inspectorData: {
+          "align1": {
+            title: "CONTEXTUAL LEARNING",
+            tag: "Table Alignment 1",
+            text: "<strong>IKS Modality:</strong> Rooted in local culture, ecology, traditions, and community experiences.<br><strong>NEP 2020:</strong> Promotes education rooted in Indian and local contexts.<br><strong>Status:</strong> High theoretical alignment."
+          },
+          "align2": {
+            title: "CURRICULUM INTEGRATION",
+            tag: "Table Alignment 2",
+            text: "<strong>IKS Modality:</strong> Diverse Indian traditions across disciplines.<br><strong>NEP 2020:</strong> Promotes integration across educational curricula.<br><strong>Identified Bottleneck:</strong> Authentic and validated IKS resources require greater institutional development."
+          },
+          "align3": {
+            title: "MULTIDISCIPLINARY LEARNING",
+            tag: "Table Alignment 3",
+            text: "<strong>IKS Modality:</strong> Connects knowledge across different domains.<br><strong>NEP 2020:</strong> Promotes multidisciplinary and holistic education.<br><strong>Identified Bottleneck:</strong> Operational models for interdisciplinary IKS integration remain severely limited."
+          },
+          "align4": {
+            title: "EXPERIENTIAL LEARNING",
+            tag: "Table Alignment 4",
+            text: "<strong>IKS Modality:</strong> Develops through observation, practice, experimentation, and participation.<br><strong>NEP 2020:</strong> Emphasises experiential learning and learning by doing.<br><strong>Status:</strong> Complete synergy."
+          },
+          "align5": {
+            title: "TEACHER PREPAREDNESS",
+            tag: "Table Alignment 5",
+            text: "<strong>IKS Modality:</strong> Requires teachers with knowledge of IKS traditions, sources, and practices.<br><strong>NEP 2020:</strong> Emphasises teacher professional development & orientation.<br><strong>CRITICAL BOTTLENECK:</strong> Adequate teacher preparedness remains the primary implementation barrier."
+          }
+        },
+        aiVoice: "Slide 5 reproduces the paper's alignment table. While contextual and experiential learning align perfectly, teacher preparedness and a lack of verified resources remain critical bottlenecks."
+      },
+      {
+        badge: "STAGE 06 // FINDINGS: OBJECTIVE 3",
+        title: "Six Pedagogical Integration Pathways",
+        subtitle: "Classroom-tested mechanisms identified in literature synthesis",
+        trace: "Correspondence to Objective 3 (Section 6)",
+        content: `
+          <div class="paper-box">
+            <h4>Concrete Classroom Pathways from the Paper</h4>
+            <p>IKS cannot be integrated through rote textbook memorization. Six distinct pedagogical pathways translate traditional knowledge into active inquiry.</p>
+          </div>
+        `,
+        buttons: [
+          { id: "pway1", label: "1. Place-Based Learning", dataTag: "Water/Agri" },
+          { id: "pway2", label: "2. Experiential Pedagogy", dataTag: "Craft/Herbal" },
+          { id: "pway3", label: "3. Dialogic & Comparative", dataTag: "Astronomy Case" },
+          { id: "pway4", label: "4. Community Knowledge Holders", dataTag: "Elders/Artisans" },
+          { id: "pway5", label: "5. Interdisciplinary Weaving", dataTag: "Cross-Subject" },
+          { id: "pway6", label: "6. Teacher-Mediated Bridge", dataTag: "Faculty CPD" }
+        ],
+        inspectorData: {
+          "pway1": {
+            title: "CONTEXTUALISED & PLACE-BASED",
+            tag: "Pathway 1 (p. 5)",
+            text: "<strong>Paper Example:</strong> Traditional water-management systems studied through environmental science, geography, and sustainability; local agricultural practices connected with biodiversity and soil science."
+          },
+          "pway2": {
+            title: "EXPERIENTIAL & LEARNING-BY-DOING",
+            tag: "Pathway 2 (p. 5)",
+            text: "<strong>Paper Example:</strong> Field visits, traditional craft-making, local ecological investigations, medicinal-plant documentation, and community projects. Converts knowledge into direct learning experiences."
+          },
+          "pway3": {
+            title: "DIALOGIC, COMPARATIVE & CRITICAL",
+            tag: "Pathway 3 (p. 5-6)",
+            text: "<strong>Paper Example:</strong> Traditional astronomical observations discussed alongside contemporary astronomy to examine evidence, assumptions, and limitations. Prevents both uncritical romanticisation and rejection."
+          },
+          "pway4": {
+            title: "COMMUNITY & KNOWLEDGE-HOLDER",
+            tag: "Pathway 4 (p. 6)",
+            text: "Involving elders, artisans, and farmers as co-contributors to knowledge construction rather than mere informants. Students document oral histories and learn traditional skills directly from practitioners."
+          },
+          "pway5": {
+            title: "INTERDISCIPLINARY & CULTURALLY RESPONSIVE",
+            tag: "Pathway 5 (p. 6)",
+            text: "Embedding IKS across subjects. Water conservation examined simultaneously through science, geography, mathematics, history, and ethics, incorporating local languages and oral traditions."
+          },
+          "pway6": {
+            title: "TEACHER-MEDIATED REFLECTIVE PEDAGOGY",
+            tag: "Pathway 6 (p. 6)",
+            text: "Shifting the teacher's role from a content transmitter to a facilitator and epistemic bridge. Requires continuous professional development (CPD) in contextual curriculum design and critical reflection."
+          }
+        },
+        aiVoice: "Objective 3 outlines six pathways. For instance, Pathway 3 uses comparative astronomy to weigh traditional observations alongside astrophysics, fostering epistemic rigour."
+      },
+      {
+        badge: "STAGE 07 // FINDINGS: OBJECTIVE 4",
+        title: "The 8-Pillar Policy-Aligned Framework",
+        subtitle: "The comprehensive architectural model developed by the study",
+        trace: "Correspondence to Objective 4 (Section 6)",
+        content: `
+          <div class="paper-box">
+            <h4>The Complete Policy-Aligned Architectural Ecosystem</h4>
+            <p>Synthesizing NEP 2020, NCFSE 2023, UGC guidelines, and literature findings into eight operational pillars connecting curriculum, pedagogy, teachers, learners, and communities.</p>
+          </div>
+        `,
+        buttons: [
+          { id: "pil1", label: "Pillar 1: Curriculum", dataTag: "Contextual" },
+          { id: "pil2", label: "Pillar 2: Epistemic Bridge", dataTag: "Dialogue" },
+          { id: "pil3", label: "Pillar 3: Experiential", dataTag: "Multi-Disciplinary" },
+          { id: "pil4", label: "Pillar 4: Teacher Capacity", dataTag: "IKS Cells" },
+          { id: "pil5", label: "Pillar 5: Community Validation", dataTag: "Authenticity" },
+          { id: "pil6", label: "Pillar 6: Research Cycle", dataTag: "Iterative" },
+          { id: "pil7", label: "Pillar 7: Digital Repositories", dataTag: "Preservation" },
+          { id: "pil8", label: "Pillar 8: Applied Innovation", dataTag: "Contemporary" }
+        ],
+        inspectorData: {
+          "pil1": {
+            title: "PILLAR 1: CONTEXTUAL CURRICULUM",
+            tag: "Framework P. 1",
+            text: "Integrate IKS with existing subjects by connecting Indian culture, local knowledge, ecology, traditions, and heritage with contemporary scientific concepts."
+          },
+          "pil2": {
+            title: "PILLAR 2: EPISTEMOLOGICAL BRIDGING",
+            tag: "Framework P. 2",
+            text: "Create dialogue between IKS and contemporary knowledge through critical comparison, evidence-based inquiry, and interdisciplinary learning, avoiding both rejection and uncritical acceptance."
+          },
+          "pil3": {
+            title: "PILLAR 3: EXPERIENTIAL LEARNING",
+            tag: "Framework P. 3",
+            text: "Apply IKS through projects, fieldwork, community activities, and problem-solving across science, humanities, arts, environment, and vocational education."
+          },
+          "pil4": {
+            title: "PILLAR 4: TEACHER & INSTITUTIONAL CAPACITY",
+            tag: "Framework P. 4",
+            text: "Strengthen teacher preparation, faculty development, university IKS cells, and interdisciplinary collaboration to enable meaningful classroom delivery."
+          },
+          "pil5": {
+            title: "PILLAR 5: COMMUNITY & KNOWLEDGE VALIDATION",
+            tag: "Framework P. 5",
+            text: "Involve local knowledge holders, practitioners, and scholars while ensuring authenticity, systematic documentation, and academic verification."
+          },
+          "pil6": {
+            title: "PILLAR 6: CONTINUOUS RESEARCH & EVALUATION",
+            tag: "Framework P. 6",
+            text: "Establish an iterative evidence cycle: <strong>Integration &rarr; Implementation &rarr; Evaluation &rarr; Research &rarr; Refinement</strong>."
+          },
+          "pil7": {
+            title: "PILLAR 7: DIGITAL PRESERVATION",
+            tag: "Framework P. 7",
+            text: "Deploy digital repositories, multimedia archives, and educational technologies to preserve and disseminate IKS while protecting cultural authenticity."
+          },
+          "pil8": {
+            title: "PILLAR 8: INNOVATION & CONTEMPORARY RELEVANCE",
+            tag: "Framework P. 8",
+            text: "Encourage entrepreneurship and applied research that transforms relevant IKS into contemporary solutions for sustainability, health, agriculture, and technology."
+          }
+        },
+        aiVoice: "Objective 4 presents the 8-pillar framework. It builds an operational bridge connecting contextual curriculum, epistemological dialogue, teacher capacity, and community validation."
+      },
+      {
+        badge: "STAGE 08 // POLICY SIMULATION ENGINE",
+        title: "Policy-to-Classroom Implementation Simulator",
+        subtitle: "Interactive mathematical modeling of the paper's 4 core implementation variables",
+        trace: "Derived from Findings on Teacher Capacity & Risk",
+        content: `
+          <div class="paper-box">
+            <h4>Empirical Implementation Levers</h4>
+            <p>Adjust the sliders below to simulate the real-world trade-offs identified in the literature: when teacher training is neglected, tokenism and misconception risks escalate rapidly.</p>
+          </div>
+        `,
+        buttons: [
+          { id: "simPresetStatus", label: "Preset: Current Status Quo", dataTag: "Low Prep" },
+          { id: "simPresetToken", label: "Preset: Superficial Tokenism", dataTag: "High Risk" },
+          { id: "simPresetNep", label: "Preset: NEP 2020 Ideal Model", dataTag: "High Fidelity" }
+        ],
+        sliders: [
+          { id: "simTcap", label: "Teacher Preparedness (T_cap)", min: 0, max: 100, val: 35, unit: "%" },
+          { id: "simCpart", label: "Community Engagement (C_part)", min: 0, max: 100, val: 25, unit: "%" },
+          { id: "simEbridge", label: "Epistemic Bridging (E_bridge)", min: 0, max: 100, val: 30, unit: "%" },
+          { id: "simPexp", label: "Experiential Learning (P_exp)", min: 0, max: 100, val: 45, unit: "%" }
+        ],
+        inspectorData: {
+          "simPresetStatus": {
+            title: "SCENARIO: CURRENT STATUS QUO",
+            tag: "Baseline 2026",
+            text: "<strong>T_cap: 35% | C_part: 25% | E_bridge: 30% | P_exp: 45%</strong><br>Reflects current school reality: fragmented IKS modules, high teacher hesitation, and moderate student retention."
+          },
+          "simPresetToken": {
+            title: "SCENARIO: SUPERFICIAL TOKENISM",
+            tag: "Failure Mode",
+            text: "<strong>T_cap: 15% | C_part: 10% | E_bridge: 10% | P_exp: 30%</strong><br>Adding traditional content without teacher training or epistemic rigour creates acute risk of pseudoscientific misconceptions."
+          },
+          "simPresetNep": {
+            title: "SCENARIO: NEP 2020 IDEAL MODEL",
+            tag: "Optimal Policy Target",
+            text: "<strong>T_cap: 85% | C_part: 80% | E_bridge: 85% | P_exp: 90%</strong><br>Fully realized 8-Pillar framework: continuous teacher CPD, co-designed community readers, and deep experiential inquiry."
+          }
+        },
+        aiVoice: "In Slide 8's policy simulator, adjust the four levers from the research paper. Notice how raising teacher preparation suppresses tokenism and drives conceptual mastery."
+      },
+      {
+        badge: "STAGE 09 // CLASSROOM CASE STUDY SANDBOX",
+        title: "Traditional Water Management (Baoli)",
+        subtitle: "Direct simulation of the paper's hydraulic & environmental science case study",
+        trace: "Section 6 (Pedagogical Pathways: P. 5)",
+        content: `
+          <div class="paper-box">
+            <h4>Concrete Classroom Integration Case Study</h4>
+            <p>The paper explicitly highlights traditional water management: <em>'For example, traditional water-management systems can be studied through environmental science, geography, and sustainability...'</em></p>
+          </div>
+        `,
+        buttons: [
+          { id: "caseA", label: "Model A: Textbook Abstract Lecture", dataTag: "Colonial Default" },
+          { id: "caseB", label: "Model B: Cultural Folklore Only", dataTag: "Tokenistic" },
+          { id: "caseC", label: "Model C: NEP 2020 Epistemic Bridge", dataTag: "Multi-Disciplinary" }
+        ],
+        inspectorData: {
+          "caseA": {
+            title: "MODEL A: TEXTBOOK ABSTRACT LECTURE",
+            tag: "Current Default",
+            text: "<strong>Curriculum Delivery:</strong> Teaching hydrostatic equations (P = &rho;gh) purely through abstract board diagrams.<br><strong>Retention:</strong> Low (18%)<br><strong>Cultural Relevance:</strong> Zero<br><strong>Community Link:</strong> Disconnected."
+          },
+          "caseB": {
+            title: "MODEL B: CULTURAL FOLKLORE ONLY",
+            tag: "Superficial Inclusion",
+            text: "<strong>Curriculum Delivery:</strong> Showing photographs of stepwells during art class with patriotic praise but no physics or ecological calculations.<br><strong>Misconception Risk:</strong> High<br><strong>Scientific Rigour:</strong> Minimal."
+          },
+          "caseC": {
+            title: "MODEL C: NEP 2020 EPISTEMIC BRIDGE",
+            tag: "Recommended by Paper",
+            text: "<strong>Interdisciplinary Integration:</strong><br>&bull; <em>Physics:</em> Aquifer pressure differentials.<br>&bull; <em>Chemistry:</em> Silt microbial filtration strata.<br>&bull; <em>Mathematics:</em> Step geometry & volume.<br>&bull; <em>Civics:</em> Historical community water governance.<br><strong>Outcome:</strong> 92% conceptual mastery."
+          }
+        },
+        aiVoice: "Slide 9 simulates the traditional stepwell case study from the paper. Model C demonstrates how integrating physics, chemistry, mathematics, and civics validates indigenous engineering."
+      },
+      {
+        badge: "STAGE 10 // CRITICAL ANALYSIS",
+        title: "Systematic Review: Impacts vs. Barriers",
+        subtitle: "Empirical findings from the 2026 STEM systematic review (Section 2)",
+        trace: "Literature Review (Section 2, p. 2-3)",
+        content: `
+          <div class="paper-box">
+            <h4>Synthesis of the 2026 STEM Systematic Review</h4>
+            <p>The 2026 systematic review of IKS integration into STEM education uncovers five documented learning contributions and five persistent implementation barriers.</p>
+          </div>
+        `,
+        buttons: [
+          { id: "stemGains", label: "5 Measured Learning Contributions", dataTag: "Positive Impacts" },
+          { id: "stemBarriers", label: "5 Persistent Implementation Barriers", dataTag: "Systemic Bottlenecks" },
+          { id: "stemRemedies", label: "Recommended Remediation Strategies", dataTag: "Policy Solutions" }
+        ],
+        inspectorData: {
+          "stemGains": {
+            title: "5 MEASURED CONTRIBUTIONS (2026 REVIEW)",
+            tag: "Empirical Gains",
+            text: "1. <strong>Scientific Understanding:</strong> Enhanced contextual grasp.<br>2. <strong>Creative Thinking:</strong> Multi-perspective problem solving.<br>3. <strong>Environmental Awareness:</strong> Locally rooted ecological ethics.<br>4. <strong>Cultural Identity:</strong> Pride in ancestral heritage.<br>5. <strong>Inclusivity:</strong> Validating non-Eurocentric students."
+          },
+          "stemBarriers": {
+            title: "5 PERSISTENT BARRIERS (2026 REVIEW)",
+            tag: "Documented Hurdles",
+            text: "1. <strong>Epistemological Conflicts:</strong> Paradigm clashes.<br>2. <strong>Inadequate Guidelines:</strong> Lack of formal syllabi.<br>3. <strong>Limited Teacher Preparedness:</strong> Critical faculty training gap.<br>4. <strong>Resource Constraints:</strong> Lack of validated regional texts.<br>5. <strong>Community Engagement Difficulties:</strong> Extractivism."
+          },
+          "stemRemedies": {
+            title: "RECOMMENDED REMEDIATION STRATEGIES",
+            tag: "Paper Recommendations",
+            text: "1. <strong>Community Co-Designed Curricula:</strong> Prior informed consent.<br>2. <strong>Continuous Professional Development (CPD):</strong> Mandatory IKS modules.<br>3. <strong>Culturally Responsive Assessment:</strong> Beyond rote exams."
+          }
+        },
+        aiVoice: "Slide 10 details the 2026 STEM review findings. Five documented gains—including creative thinking and environmental awareness—are contrasted against persistent barriers like teacher deficits."
+      },
+      {
+        badge: "STAGE 11 // POLICY RECOMMENDATIONS",
+        title: "Ten Systemic Policy Recommendations",
+        subtitle: "Concrete institutional action plan formulated by the study (Section 7)",
+        trace: "Paper Section 7: Recommendations",
+        content: `
+          <div class="paper-box">
+            <h4>Translating Framework into Actionable Directives</h4>
+            <p>The paper formulates ten specific policy recommendations categorized across curriculum, teacher capacity, community governance, and research institutions.</p>
+          </div>
+        `,
+        buttons: [
+          { id: "recAll", label: "View All 10 Recommendations", dataTag: "Complete 10" },
+          { id: "recPedagogy", label: "Curriculum & Pedagogy (1-3)", dataTag: "Classroom" },
+          { id: "recTeachers", label: "Teachers & Community (4-6)", dataTag: "Stakeholders" },
+          { id: "recInst", label: "Institutions & Research (7-10)", dataTag: "Governance" }
+        ],
+        inspectorData: {
+          "recAll": {
+            title: "TEN SYSTEMIC RECOMMENDATIONS",
+            tag: "Section 7 (p. 6-7)",
+            text: "1. Cross-disciplinary integration.<br>2. Experiential learning & fieldwork.<br>3. Teacher training & CPD.<br>4. Community elders as active partners.<br>5. Critical evidence-based dialogue.<br>6. Systematic validation & documentation.<br>7. Ethical digital preservation.<br>8. University IKS cells.<br>9. Applied IKS research for contemporary crises.<br>10. Continuous evaluation cycle."
+          },
+          "recPedagogy": {
+            title: "CURRICULUM & PEDAGOGY DIRECTIVES",
+            tag: "Recs 1 to 3",
+            text: "&bull; <strong>Rec 1:</strong> Integrate IKS across disciplines through contextual curriculum design.<br>&bull; <strong>Rec 2:</strong> Promote experiential learning through fieldwork and learning-by-doing.<br>&bull; <strong>Rec 3:</strong> Strengthen teacher preparation through IKS-oriented training."
+          },
+          "recTeachers": {
+            title: "TEACHER & COMMUNITY DIRECTIVES",
+            tag: "Recs 4 to 6",
+            text: "&bull; <strong>Rec 4:</strong> Engage community knowledge holders as active co-teachers.<br>&bull; <strong>Rec 5:</strong> Promote critical dialogue avoiding both rejection and romanticisation.<br>&bull; <strong>Rec 6:</strong> Develop authentic IKS resources through academic verification."
+          },
+          "recInst": {
+            title: "INSTITUTIONS & RESEARCH DIRECTIVES",
+            tag: "Recs 7 to 10",
+            text: "&bull; <strong>Rec 7:</strong> Ethical digital preservation repositories.<br>&bull; <strong>Rec 8:</strong> Establish university IKS cells & interdisciplinary hubs.<br>&bull; <strong>Rec 9:</strong> IKS research for climate resilience and healthcare.<br>&bull; <strong>Rec 10:</strong> Continuous evaluation cycle (Integration &rarr; Refinement)."
+          }
+        },
+        aiVoice: "Slide 11 presents the study's ten recommendations. They establish institutional IKS cells, mandate teacher professional development, and safeguard community intellectual property."
+      },
+      {
+        badge: "STAGE 12 // REFERENCES & SYNTHESIS",
+        title: "Scholarly Authority & Final Defense",
+        subtitle: "Complete bibliographic citations and concluding research synthesis",
+        trace: "Paper Section 8: References",
+        content: `
+          <div class="paper-box">
+            <h4>Scholarly Bibliographic Citations</h4>
+            <ul style="font-size:0.72rem;">
+              <li>Ministry of Education. (2020). <em>National Education Policy 2020</em>.</li>
+              <li>NCERT. (2023). <em>National Curriculum Framework for School Education 2023</em>.</li>
+              <li>UGC. (2023). <em>Guidelines for incorporating Indian Knowledge in HEI</em>.</li>
+              <li>Ijatuyi et al. (2025). <em>Environmental Science &amp; Policy</em>, 170.</li>
+              <li>Ogegbo &amp; Ramnarain. (2024). <em>AJRMSTE</em>, 28(3).</li>
+              <li>Rasmawan et al. (2025). <em>Journal of Teaching and Learning</em>, 19(5).</li>
+              <li>UNESCO. (2023, 2026). <em>Local and Indigenous Knowledge Systems</em>.</li>
+            </ul>
+          </div>
+        `,
+        buttons: [
+          { id: "refThesis", label: "Final Concluding Synthesis", dataTag: "Conclusion" },
+          { id: "refAuthors", label: "Author Contact & Affiliation", dataTag: "NIEPA / CUJ" },
+          { id: "refDefense", label: "Simulate Defense Q&A Response", dataTag: "Committee Q&A" }
+        ],
+        inspectorData: {
+          "refThesis": {
+            title: "CONCLUDING RESEARCH THESIS",
+            tag: "Section 8 Synthesis",
+            text: "Meaningful IKS integration under NEP 2020 can strengthen culturally responsive, holistic, and sustainable educational practices while creating constructive interfaces between indigenous and contemporary knowledge systems without sacrificing academic rigour."
+          },
+          "refAuthors": {
+            title: "RESEARCH AFFILIATIONS",
+            tag: "Institutional Contacts",
+            text: "<strong>Vishab Partap Singh Chambyal</strong><br>MAAIE Scholar, NIEPA, New Delhi (vishab@niepa.ac.in)<br><br><strong>Payal Sharma</strong><br>M.Ed. Scholar, Central University of Jammu (payal.ps12345@gmail.com)"
+          },
+          "refDefense": {
+            title: "POTENTIAL COMMITTEE DEFENSE Q&A",
+            tag: "Epistemic Rigour Defense",
+            text: "<strong>Q:</strong> Does IKS promote unscientific superstition?<br><strong>Defense Answer:</strong> No. Our framework (Pillar 2) explicitly enforces <em>epistemological bridging</em> and critical comparative inquiry, testing traditional empirical observations alongside contemporary scientific methods."
+          }
+        },
+        aiVoice: "In conclusion, this NIEPA-Central University of Jammu study establishes that IKS provides a dynamic, empirically validated foundation for holistic Indian education. Thank you."
+      }
+    ];
+
+    let currentSlide = 0;
+    let activeDataBtnId = null;
+    let audioActive = false;
+    let simTick = 0;
+
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    setTimeout(resizeCanvas, 50);
+
+    function loadSlide(idx) {
+      currentSlide = idx;
+      const data = researchDeck[idx];
+
+      document.getElementById('slideBadge').innerText = data.badge;
+      document.getElementById('slideTitle').innerText = data.title;
+      document.getElementById('slideSubtitle').innerText = data.subtitle;
+      document.getElementById('slideContent').innerHTML = data.content;
+      document.getElementById('hudTrace').innerText = data.trace;
+      document.getElementById('lblSlideCounter').innerText = `${String(idx + 1).padStart(2, '0')} / ${String(researchDeck.length).padStart(2, '0')}`;
+      document.getElementById('progressFill').style.width = `${((idx + 1) / researchDeck.length) * 100}%`;
+
+      const btnRow = document.getElementById('switcherButtons');
+      btnRow.innerHTML = '';
+      data.buttons.forEach((btn, bIdx) => {
+        const b = document.createElement('button');
+        b.className = `switch-btn ${bIdx === 0 ? 'active' : ''}`;
+        b.id = `btn_${btn.id}`;
+        b.innerHTML = `<span>&bull;</span> ${btn.label}`;
+        b.onclick = () => switchDataState(btn.id);
+        btnRow.appendChild(b);
+      });
+
+      const sliderRack = document.getElementById('sliderRack');
+      if (data.sliders) {
+        sliderRack.style.display = 'flex';
+        sliderRack.innerHTML = '';
+        data.sliders.forEach(s => {
+          const sBox = document.createElement('div');
+          sBox.className = 'slider-item';
+          sBox.innerHTML = `
+            <label><span>${s.label}</span><strong id="val_${s.id}">${s.val}${s.unit}</strong></label>
+            <input type="range" class="slider-ctl" id="${s.id}" min="${s.min}" max="${s.max}" value="${s.val}" 
+              oninput="handleSliderChange('${s.id}', '${s.unit}')">
+          `;
+          sliderRack.appendChild(sBox);
+        });
+      } else {
+        sliderRack.style.display = 'none';
+      }
+
+      switchDataState(data.buttons[0].id);
+      narrate(data.aiVoice);
+    }
+
+    function switchDataState(btnId) {
+      activeDataBtnId = btnId;
+      const slide = researchDeck[currentSlide];
+
+      slide.buttons.forEach(b => {
+        const el = document.getElementById(`btn_${b.id}`);
+        if (el) el.classList.remove('active');
+      });
+      const activeEl = document.getElementById(`btn_${btnId}`);
+      if (activeEl) activeEl.classList.add('active');
+
+      const inspectItem = slide.inspectorData[btnId];
+      if (inspectItem) {
+        document.getElementById('inspectHeading').innerText = inspectItem.title;
+        document.getElementById('inspectTag').innerText = inspectItem.tag;
+        document.getElementById('inspectBody').innerHTML = inspectItem.text;
+        document.getElementById('hudDataMode').innerText = inspectItem.tag.toUpperCase();
+      }
+
+      if (slide.sliders) {
+        if (btnId === 'simPresetStatus') {
+          setSliderVals(35, 25, 30, 45);
+        } else if (btnId === 'simPresetToken') {
+          setSliderVals(15, 10, 10, 30);
+        } else if (btnId === 'simPresetNep') {
+          setSliderVals(85, 80, 85, 90);
+        }
+      }
+    }
+
+    function setSliderVals(t, c, e, p) {
+      document.getElementById('simTcap').value = t;
+      document.getElementById('simCpart').value = c;
+      document.getElementById('simEbridge').value = e;
+      document.getElementById('simPexp').value = p;
+      document.getElementById('val_simTcap').innerText = `${t}%`;
+      document.getElementById('val_simCpart').innerText = `${c}%`;
+      document.getElementById('val_simEbridge').innerText = `${e}%`;
+      document.getElementById('val_simPexp').innerText = `${p}%`;
+    }
+
+    function handleSliderChange(id, unit) {
+      const v = document.getElementById(id).value;
+      document.getElementById(`val_${id}`).innerText = `${v}${unit}`;
+    }
+
+    function nextSlide() {
+      if (currentSlide < researchDeck.length - 1) {
+        loadSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        loadSlide(currentSlide - 1);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        prevSlide();
+      }
+    });
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function toggleAudio() {
+      audioActive = !audioActive;
+      const lbl = document.getElementById('lblAudio');
+      lbl.innerText = audioActive ? 'ON' : 'OFF';
+      lbl.style.color = audioActive ? '#4ade80' : '#f87171';
+      if (!audioActive && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      } else {
+        narrate(researchDeck[currentSlide].aiVoice);
+      }
+    }
+
+    function narrate(text) {
+      document.getElementById('aiVoiceTranscript').innerText = text;
+      if (audioActive && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = 1.02;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    function downloadWordPressFile() {
+      const pageHtml = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      const blob = new Blob([pageHtml], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "iks_nep2020_presentation.html";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function renderSimulationFrame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      simTick += 0.02;
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+
+      switch(currentSlide) {
+        case 0: drawEpistemicHelix(cx, cy); break;
+        case 1: drawLiteratureMatrix(cx, cy); break;
+        case 2: drawMethodologyPrism(cx, cy); break;
+        case 3: drawLivingIksNetwork(cx, cy); break;
+        case 4: drawAlignmentTelemetry(cx, cy); break;
+        case 5: drawPathwayNexus(cx, cy); break;
+        case 6: drawEightPillars3D(cx, cy); break;
+        case 7: drawPolicySimulationBars(cx, cy); break;
+        case 8: drawStepwellHydraulics(cx, cy); break;
+        case 9: drawBarriersRadar(cx, cy); break;
+        case 10: drawRecommendationsPillars(cx, cy); break;
+        case 11: drawKnowledgeHorizon(cx, cy); break;
+        default: drawEpistemicHelix(cx, cy);
+      }
+
+      requestAnimationFrame(renderSimulationFrame);
+    }
+
+    function drawEpistemicHelix(cx, cy) {
+      const count = 28;
+      const radius = 80;
+      const height = 280;
+
+      for (let i = 0; i < count; i++) {
+        const t = (i / count) * Math.PI * 4 + simTick;
+        const y = -height / 2 + (i / count) * height;
+        const x1 = Math.sin(t) * radius;
+        const x2 = Math.sin(t + Math.PI) * radius;
+        const z1 = Math.cos(t) * 40;
+
+        const scale1 = (300 / (300 + z1));
+        const px1 = cx + x1 * scale1;
+        const py1 = cy + y * scale1;
+        const px2 = cx + x2 * scale1;
+        const py2 = cy + y * scale1;
+
+        ctx.beginPath();
+        ctx.moveTo(px1, py1);
+        ctx.lineTo(px2, py2);
+        ctx.strokeStyle = 'rgba(0, 242, 254, 0.25)';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(px1, py1, Math.max(3, 6 * scale1), 0, Math.PI * 2);
+        ctx.fillStyle = '#f97316';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(px2, py2, Math.max(3, 6 * scale1), 0, Math.PI * 2);
+        ctx.fillStyle = '#00f2fe';
+        ctx.fill();
+      }
+    }
+
+    function drawLiteratureMatrix(cx, cy) {
+      const active = activeDataBtnId;
+      ctx.textAlign = 'center';
+      ctx.font = '12px monospace';
+
+      const reviews = [
+        { id: 'ogegbo', name: 'Ogegbo (2024)', sub: '25 Studies', x: -140, y: -60, col: '#f97316' },
+        { id: 'ijatuyi', name: 'Ijatuyi (2025)', sub: 'Env. Sci. & Policy', x: 140, y: -60, col: '#00f2fe' },
+        { id: 'rasmawan', name: 'Rasmawan (2025)', sub: 'Science Education', x: -140, y: 70, col: '#fbbf24' },
+        { id: 'stem2026', name: '2026 Review', sub: 'STEM Barriers', x: 140, y: 70, col: '#10b981' }
+      ];
+
+      reviews.forEach(r => {
+        const isSelected = (r.id === active);
+        const radius = isSelected ? 42 : 32;
+
+        ctx.beginPath();
+        ctx.arc(cx + r.x, cy + r.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = isSelected ? 'rgba(0, 242, 254, 0.2)' : 'rgba(15, 23, 42, 0.7)';
+        ctx.strokeStyle = isSelected ? '#00f2fe' : '#334155';
+        ctx.lineWidth = isSelected ? 3 : 1;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = r.col;
+        ctx.fillText(r.name, cx + r.x, cy + r.y - 4);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '9px monospace';
+        ctx.fillText(r.sub, cx + r.x, cy + r.y + 12);
+        ctx.font = '12px monospace';
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + r.x, cy + r.y);
+        ctx.strokeStyle = isSelected ? r.col : 'rgba(51, 65, 85, 0.4)';
+        ctx.stroke();
+      });
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, 26, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.stroke();
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '10px monospace';
+      ctx.fillText('SYNTHESIS', cx, cy + 3);
+    }
+
+    function drawMethodologyPrism(cx, cy) {
+      const radius = 100;
+      const angle = simTick * 0.4;
+
+      const p1 = { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * 40 - 50 };
+      const p2 = { x: cx + Math.cos(angle + 2.1) * radius, y: cy + Math.sin(angle + 2.1) * 40 + 50 };
+      const p3 = { x: cx + Math.cos(angle + 4.2) * radius, y: cy + Math.sin(angle + 4.2) * 40 + 50 };
+
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.lineTo(p3.x, p3.y);
+      ctx.closePath();
+      ctx.strokeStyle = '#00f2fe';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(0, 242, 254, 0.08)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(cx - 200, cy);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      const spectrum = ['#f97316', '#00f2fe', '#fbbf24', '#10b981'];
+      spectrum.forEach((col, i) => {
+        ctx.beginPath();
+        ctx.moveTo(p2.x, p2.y);
+        ctx.lineTo(cx + 180, cy - 60 + i * 40);
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+    }
+
+    function drawLivingIksNetwork(cx, cy) {
+      const nodes = [
+        { id: 'dim1', name: 'Living System', rad: 100, angle: 0 },
+        { id: 'dim2', name: 'Local Contexts', rad: 100, angle: 1.25 },
+        { id: 'dim3', name: 'Community-Based', rad: 100, angle: 2.5 },
+        { id: 'dim4', name: 'Generational', rad: 100, angle: 3.75 },
+        { id: 'dim5', name: 'Contemporary', rad: 100, angle: 5.0 }
+      ];
+
+      nodes.forEach(n => {
+        const isSel = (n.id === activeDataBtnId);
+        const nx = cx + Math.cos(n.angle + simTick * 0.2) * n.rad;
+        const ny = cy + Math.sin(n.angle + simTick * 0.2) * n.rad;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(nx, ny);
+        ctx.strokeStyle = isSel ? '#00f2fe' : 'rgba(51, 65, 85, 0.5)';
+        ctx.lineWidth = isSel ? 2.5 : 1;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(nx, ny, isSel ? 18 : 10, 0, Math.PI * 2);
+        ctx.fillStyle = isSel ? '#00f2fe' : '#f97316';
+        ctx.fill();
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '10px monospace';
+        ctx.fillText(n.name, nx + 14, ny + 3);
+      });
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#f97316';
+      ctx.stroke();
+      ctx.fill();
+      ctx.fillStyle = '#f97316';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('DYNAMIC IKS', cx, cy + 3);
+    }
+
+    function drawAlignmentTelemetry(cx, cy) {
+      const rows = [
+        { id: 'align1', title: 'Contextual Learning', alignment: 90, bottleneck: 25 },
+        { id: 'align2', title: 'Curricular Integration', alignment: 70, bottleneck: 65 },
+        { id: 'align3', title: 'Multidisciplinary Learning', alignment: 75, bottleneck: 70 },
+        { id: 'align4', title: 'Experiential Learning', alignment: 95, bottleneck: 20 },
+        { id: 'align5', title: 'Teacher Preparedness', alignment: 40, bottleneck: 90 }
+      ];
+
+      ctx.textAlign = 'left';
+      ctx.font = '11px monospace';
+
+      rows.forEach((r, idx) => {
+        const isSel = (r.id === activeDataBtnId);
+        const y = cy - 80 + idx * 36;
+
+        ctx.fillStyle = isSel ? '#00f2fe' : '#94a3b8';
+        ctx.fillText(r.title, cx - 180, y);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(cx - 10, y - 10, 80, 8);
+        ctx.fillStyle = '#00f2fe';
+        ctx.fillRect(cx - 10, y - 10, (r.alignment / 100) * 80, 8);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(cx + 90, y - 10, 80, 8);
+        ctx.fillStyle = r.bottleneck > 60 ? '#f43f5e' : '#fbbf24';
+        ctx.fillRect(cx + 90, y - 10, (r.bottleneck / 100) * 80, 8);
+      });
+
+      ctx.fillStyle = '#00f2fe';
+      ctx.fillText('&bull; Policy Synergy', cx - 10, cy + 110);
+      ctx.fillStyle = '#f43f5e';
+      ctx.fillText('&bull; Bottleneck Severity', cx + 90, cy + 110);
+    }
+
+    function drawPathwayNexus(cx, cy) {
+      const pathways = [
+        { id: 'pway1', name: 'Place-Based', col: '#f97316' },
+        { id: 'pway2', name: 'Experiential', col: '#00f2fe' },
+        { id: 'pway3', name: 'Dialogic', col: '#fbbf24' },
+        { id: 'pway4', name: 'Community', col: '#10b981' },
+        { id: 'pway5', name: 'Interdisciplinary', col: '#a855f7' },
+        { id: 'pway6', name: 'Teacher Bridge', col: '#38bdf8' }
+      ];
+
+      pathways.forEach((p, idx) => {
+        const isSel = (p.id === activeDataBtnId);
+        const ang = (idx / 6) * Math.PI * 2 + simTick * 0.15;
+        const px = cx + Math.cos(ang) * 115;
+        const py = cy + Math.sin(ang) * 85;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(px, py);
+        ctx.strokeStyle = isSel ? p.col : 'rgba(51, 65, 85, 0.4)';
+        ctx.lineWidth = isSel ? 3 : 1;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(px, py, isSel ? 18 : 10, 0, Math.PI * 2);
+        ctx.fillStyle = p.col;
+        ctx.fill();
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '10px monospace';
+        ctx.fillText(p.name, px - 20, py - 14);
+      });
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#00f2fe';
+      ctx.stroke();
+      ctx.fill();
+    }
+
+    function drawEightPillars3D(cx, cy) {
+      const count = 8;
+      const rad = 110;
+      const topY = cy - 70;
+      const botY = cy + 70;
+
+      for (let i = 0; i < count; i++) {
+        const isSel = (`pil${i+1}` === activeDataBtnId);
+        const ang = (i / count) * Math.PI * 2 + simTick * 0.2;
+        const x = cx + Math.cos(ang) * rad;
+        const z = Math.sin(ang) * 35;
+
+        ctx.beginPath();
+        ctx.moveTo(x, botY + z);
+        ctx.lineTo(x, topY + z);
+        ctx.strokeStyle = isSel ? '#00f2fe' : 'rgba(56, 189, 248, 0.4)';
+        ctx.lineWidth = isSel ? 5 : 2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(x, botY + z, isSel ? 6 : 3, 0, Math.PI * 2);
+        ctx.fillStyle = isSel ? '#fbbf24' : '#334155';
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.ellipse(cx, topY, rad, 25, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = '#00f2fe';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(cx, botY, rad, 25, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function drawPolicySimulationBars(cx, cy) {
+      const t = document.getElementById('simTcap') ? parseInt(document.getElementById('simTcap').value) : 35;
+      const c = document.getElementById('simCpart') ? parseInt(document.getElementById('simCpart').value) : 25;
+      const e = document.getElementById('simEbridge') ? parseInt(document.getElementById('simEbridge').value) : 30;
+      const p = document.getElementById('simPexp') ? parseInt(document.getElementById('simPexp').value) : 45;
+
+      const pluralism = Math.round((e * 0.4) + (t * 0.35) + (c * 0.25));
+      const depth = Math.round((p * 0.4) + (e * 0.35) + (t * 0.25));
+      const risk = Math.max(8, Math.round(100 - (t * 0.55 + e * 0.45)));
+
+      const metrics = [
+        { name: 'Epistemic Pluralism Index', val: pluralism, col: '#00f2fe' },
+        { name: 'Student Conceptual Depth', val: depth, col: '#10b981' },
+        { name: 'Tokenism & Misconception Risk', val: risk, col: risk > 60 ? '#f43f5e' : '#fbbf24' }
+      ];
+
+      ctx.font = '11px monospace';
+      metrics.forEach((m, idx) => {
+        const y = cy - 60 + idx * 45;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillText(`${m.name}: ${m.val}%`, cx - 140, y);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(cx - 140, y + 6, 280, 10);
+        ctx.fillStyle = m.col;
+        ctx.fillRect(cx - 140, y + 6, (m.val / 100) * 280, 10);
+      });
+    }
+
+    function drawStepwellHydraulics(cx, cy) {
+      const isNEP = (activeDataBtnId === 'caseC');
+      const steps = 6;
+
+      for (let s = 0; s < steps; s++) {
+        const w = (steps - s) * 24;
+        const y = cy - 60 + s * 22;
+
+        ctx.beginPath();
+        ctx.moveTo(cx - w, y);
+        ctx.lineTo(cx + w, y);
+        ctx.strokeStyle = isNEP ? '#00f2fe' : '#334155';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+
+      const waterY = cy + 40 + Math.sin(simTick) * 4;
+      ctx.beginPath();
+      ctx.arc(cx, waterY, 35, 0, Math.PI * 2);
+      ctx.fillStyle = isNEP ? 'rgba(6, 182, 212, 0.45)' : 'rgba(100, 116, 139, 0.2)';
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(isNEP ? 'AQUIFER FILTRATION ACTIVE' : 'TEXTBOOK FORMULA ONLY', cx, cy + 95);
+    }
+
+    function drawBarriersRadar(cx, cy) {
+      const isBarriers = (activeDataBtnId === 'stemBarriers');
+      const count = 5;
+      const rad = 90;
+
+      ctx.beginPath();
+      for (let i = 0; i < count; i++) {
+        const ang = (i / count) * Math.PI * 2 - Math.PI / 2;
+        const px = cx + Math.cos(ang) * rad;
+        const py = cy + Math.sin(ang) * rad;
+        ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = '#334155';
+      ctx.stroke();
+
+      ctx.beginPath();
+      for (let i = 0; i < count; i++) {
+        const ang = (i / count) * Math.PI * 2 - Math.PI / 2;
+        const rVal = isBarriers ? rad * 0.75 : rad * 0.85;
+        const px = cx + Math.cos(ang) * rVal;
+        const py = cy + Math.sin(ang) * rVal;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = isBarriers ? 'rgba(244, 63, 94, 0.25)' : 'rgba(16, 185, 129, 0.25)';
+      ctx.fill();
+      ctx.strokeStyle = isBarriers ? '#f43f5e' : '#10b981';
+      ctx.stroke();
+    }
+
+    function drawRecommendationsPillars(cx, cy) {
+      const count = 10;
+      const rad = 110;
+
+      for (let i = 0; i < count; i++) {
+        const ang = (i / count) * Math.PI * 2 + simTick * 0.2;
+        const px = cx + Math.cos(ang) * rad;
+        const py = cy + Math.sin(ang) * rad;
+
+        ctx.beginPath();
+        ctx.arc(px, py, 9, 0, Math.PI * 2);
+        ctx.fillStyle = '#00f2fe';
+        ctx.fill();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '8px monospace';
+        ctx.fillText(`R${i+1}`, px - 5, py + 3);
+      }
+    }
+
+    function drawKnowledgeHorizon(cx, cy) {
+      const lines = 10;
+      const rad = 110;
+
+      for (let i = 0; i < lines; i++) {
+        const phi = (i / lines) * Math.PI;
+        ctx.beginPath();
+        ctx.arc(cx, cy, rad * Math.sin(phi), 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(0, 242, 254, ${Math.sin(phi) * 0.45})`;
+        ctx.stroke();
+      }
+    }
+
+    loadSlide(0);
+    renderSimulationFrame();
+  </script>
+</body>
+</html>
